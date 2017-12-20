@@ -1,9 +1,9 @@
 
 import * as Koa from 'koa';
 import * as Router from 'koa-router';
-
-const app = new Koa();
-
+import * as websockify from 'koa-websocket';
+const koaApp = new Koa();
+const app = websockify(koaApp);
 app.use(async (ctx, next) => {
   // Log the request to the console
   console.log('Url:', ctx.url);
@@ -12,10 +12,21 @@ app.use(async (ctx, next) => {
 });
 
 const router = new Router();
-router.get('/*', async (ctx) => {
+const ws = new Router();
+
+router.get('/', async (ctx) => {
   ctx.body = 'Hello World!';
 });
+
+ws.get('/chat-ws', (context) => {
+  context.websocket.send('YO')
+  context.websocket.on('message', (message: any) => {
+    console.log(message);
+  })
+})
+
 app.use(router.routes());
+app.ws.use(ws.routes())
 
 app.listen(3000);
 
