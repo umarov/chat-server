@@ -2,8 +2,16 @@
 import * as Koa from 'koa';
 import * as Router from 'koa-router';
 import * as websockify from 'koa-websocket';
+import { readFile, writeFile } from 'fs';
+import { promisify } from 'util';
+
+const fileName = 'chats';
+const messages = new Map();
+
 const koaApp = new Koa();
 const app = websockify(koaApp);
+let id = 0
+
 app.use(async (ctx, next) => {
   // Log the request to the console
   console.log('Url:', ctx.url);
@@ -19,9 +27,16 @@ router.get('/', async (ctx) => {
 });
 
 ws.get('/chat-ws', (context) => {
-  context.websocket.send('YO')
+  context.websocket.send('Welcome to chat server')
+
+  messages.forEach(value => {
+    context.websocket.send(value)
+  });
+
   context.websocket.on('message', (message: any) => {
-    console.log(message);
+    const currentDate = new Date()
+    messages.set(id++, message)
+    context.websocket.send(message);
   })
 })
 
