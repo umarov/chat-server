@@ -14,7 +14,7 @@ const koaApp = new Koa();
 const app = websockify(koaApp);
 let id = 0
 
-app.use(serve(path.resolve(__dirname, '../ui/chat-ui/build')))
+app.use(serve(path.resolve(__dirname, '../ui/chat-ui/dist')))
 app.use(async (ctx, next) => {
   // Log the request to the console
   console.log('Url:', ctx.url);
