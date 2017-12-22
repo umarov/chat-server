@@ -6,6 +6,7 @@
   "scripts": {
     "test": "npm test",
     "start": "ts-node ./src/server.ts",
+    "built-start": "npm run build --prefix ui/chat-ui && npm run start",
     "watch-server": "nodemon --watch 'src/**/*' -e ts,tsx --exec 'ts-node' ./src/server.ts"
   },
   "keywords": [

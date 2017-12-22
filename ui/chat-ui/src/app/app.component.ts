@@ -5,6 +5,12 @@ import { MDCTextField } from '@material/textfield';
 import { MDCRipple } from '@material/ripple';
 import { ViewChild } from '@angular/core/src/metadata/di';
 import { ElementRef } from '@angular/core/src/linker/element_ref';
+import { fromEvent } from 'rxjs/observable/fromEvent';
+import { filter } from 'rxjs/operators/filter'
+import { pairwise } from 'rxjs/operators/pairwise'
+import { map } from 'rxjs/operators/map'
+import { debounceTime } from 'rxjs/operators/debounceTime'
+import { Subscription } from 'rxjs/Subscription';
 
 @Component({
   selector: 'app-root',
@@ -78,6 +84,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   private socket: WebSocket;
   messageListElement: HTMLUListElement;
   textInput: HTMLInputElement;
+  messagesScroll$;
+  scrollSub: Subscription;
+  forceScrollOnMessage = true;
+
   @ViewChildren("messagesList") messageLists: QueryList<ElementRef>
   @ViewChildren("textInput") textInputs: QueryList<ElementRef>
   @ViewChildren("mdcTextField") textFieldBoxEls: QueryList<ElementRef>
@@ -90,9 +100,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   ngAfterViewInit() {
     this.messageListElement = this.messageLists.first.nativeElement
     this.textInput = this.textInputs.first.nativeElement
+    this.messagesScroll$ = fromEvent(this.messageListElement, 'scroll')
+    this.registerScrollListener()
 
     const textFieldBoxEl = this.textFieldBoxEls.first.nativeElement
-    console.log(textFieldBoxEl);
+
     const textField = new MDCTextField(
       textFieldBoxEl,
       /* foundation */ undefined,
@@ -104,6 +116,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnDestroy() {
     this.socket.close();
+    this.scrollSub.unsubscribe();
   }
 
   formSubmit(event) {
@@ -120,13 +133,33 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
+  private registerScrollListener() {
+    this.scrollSub = this.messagesScroll$
+      .pipe(
+        map((e: any) => ({
+          sH: e.target.scrollHeight,
+          sT: e.target.scrollTop,
+          cH: e.target.clientHeight
+        })),
+        pairwise(),
+        debounceTime(500)
+      ).subscribe((positions) => {
+        const [first, second] = positions
+        console.log(first.sT < second.sT);
+        this.forceScrollOnMessage = first.sT < second.sT;
+      })
+  }
+
   private connectToServer() {
     this.socket = new WebSocket(`ws://${window.location.hostname}:${window.location.port}/chat-ws`);
     this.socket.addEventListener('message', (event) => {
       this.messages.push(event.data);
-      setTimeout(() => {
-        this.messageListElement.scrollTop = this.messageListElement.scrollHeight
-      }, 0)
+
+      if (this.forceScrollOnMessage) {
+        setTimeout(() => {
+          this.messageListElement.scrollTop = this.messageListElement.scrollHeight
+        }, 0)
+      }
     });
   }
 }
