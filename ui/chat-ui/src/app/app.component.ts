@@ -152,14 +152,13 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private connectToServer() {
     this.socket = new WebSocket(`ws://${window.location.hostname}:${window.location.port}/chat-ws`);
-    this.socket.addEventListener('message', (event) => {
-      this.messages.push(event.data);
-
-      if (this.forceScrollOnMessage) {
-        setTimeout(() => {
-          this.messageListElement.scrollTop = this.messageListElement.scrollHeight
-        }, 0)
-      }
+    this.socket.addEventListener('message', (wsMessage) => {
+      setTimeout(() => {
+        const data = JSON.parse(wsMessage.data);
+        const [id, message] = data;
+        this.messages.push(`User ${id}: ${message}`);
+        this.messageListElement.scrollTop = this.messageListElement.scrollHeight
+      }, 0)
     });
   }
 }

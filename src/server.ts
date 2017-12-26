@@ -6,13 +6,16 @@ import * as serve from 'koa-static';
 import { readFile, writeFile } from 'fs';
 import { promisify } from 'util';
 import * as path from 'path';
+import { Subject } from 'rxjs';
 
 const fileName = 'chats';
 const messages = new Map();
 
 const koaApp = new Koa();
 const app = websockify(koaApp);
+const messages$ = new Subject();
 let id = 0
+let userId = 0
 
 app.use(serve(path.resolve(__dirname, '../ui/chat-ui/dist')))
 app.use(async (ctx, next) => {
@@ -22,27 +25,36 @@ app.use(async (ctx, next) => {
   await next();
 });
 
-const router = new Router();
 const ws = new Router();
-
-
+let contexts = new Map();
 ws.get('/chat-ws', (context) => {
-  context.websocket.send('Welcome to chat server')
+  const currentUserId = ++userId;
+  contexts.set(currentUserId, context);
 
-  messages.forEach(value => {
-    context.websocket.send(value)
+  messages.forEach(({ userId, message }) => {
+    context.websocket.send(JSON.stringify([userId, message]))
   });
 
   context.websocket.on('message', (message: any) => {
-    const currentDate = new Date()
-    messages.set(id++, message)
-    context.websocket.send(message);
+    messages$.next({ userId: currentUserId, message })
   })
 })
 
-app.use(router.routes());
 app.ws.use(ws.routes())
 
 app.listen(3000);
+
+messages$.subscribe(({ userId, message }) => {
+  messages.set(id++, { userId, message })
+  contexts.forEach((context, key) => {
+    setTimeout(() => {
+      try {
+        context.websocket.send(JSON.stringify([userId, message]))
+      } catch(e) {
+        contexts.delete(key)
+      }
+    }, 0);
+  })
+})
 
 console.log('Server running on port 3000');
