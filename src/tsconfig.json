@@ -9,10 +9,8 @@
     "module": "commonjs",
     "target": "es2017",
     "noImplicitAny": true,
-    "outDir": "./dist",
-    "sourceMap": true
-  },
-  "include": [
-    "./src/**/*"
-  ]
+    "sourceMap": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+  }
 }

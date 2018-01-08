@@ -7,54 +7,60 @@ import { readFile, writeFile } from 'fs';
 import { promisify } from 'util';
 import * as path from 'path';
 import { Subject } from 'rxjs';
+import "reflect-metadata";
+import {createConnection} from "typeorm";
 
-const fileName = 'chats';
-const messages = new Map();
+import {User} from "./entity/User";
 
-const koaApp = new Koa();
-const app = websockify(koaApp);
-const messages$ = new Subject();
-let id = 0
-let userId = 0
+createConnection().then(async connection => {
+  const fileName = 'chats';
+  const messages = new Map();
 
-app.use(serve(path.resolve(__dirname, '../ui/chat-ui/dist')))
-app.use(async (ctx, next) => {
-  // Log the request to the console
-  console.log('Url:', ctx.url);
-  // Pass the request to the next middleware function
-  await next();
-});
+  const koaApp = new Koa();
+  const app = websockify(koaApp);
+  const messages$ = new Subject();
+  let id = 0
+  let userId = 0
 
-const ws = new Router();
-let contexts = new Map();
-ws.get('/chat-ws', (context) => {
-  const currentUserId = ++userId;
-  contexts.set(currentUserId, context);
-
-  messages.forEach(({ userId, message }) => {
-    context.websocket.send(JSON.stringify([userId, message]))
+  app.use(serve(path.resolve(__dirname, '../ui/chat-ui/dist')))
+  app.use(async (ctx, next) => {
+    // Log the request to the console
+    console.log('Url:', ctx.url);
+    // Pass the request to the next middleware function
+    await next();
   });
 
-  context.websocket.on('message', (message: any) => {
-    messages$.next({ userId: currentUserId, message })
+  const ws = new Router();
+  let contexts = new Map();
+  ws.get('/chat-ws', (context) => {
+    const currentUserId = ++userId;
+    contexts.set(currentUserId, context);
+
+    messages.forEach(({ userId, message }) => {
+      context.websocket.send(JSON.stringify([userId, message]))
+    });
+
+    context.websocket.on('message', (message: any) => {
+      messages$.next({ userId: currentUserId, message })
+    })
   })
-})
 
-app.ws.use(ws.routes())
+  app.ws.use(ws.routes())
 
-app.listen(3000);
+  app.listen(3000, () => {
+    console.log('Server running on port 3000');
+  });
 
-messages$.subscribe(({ userId, message }) => {
-  messages.set(id++, { userId, message })
-  contexts.forEach((context, key) => {
-    setTimeout(() => {
-      try {
-        context.websocket.send(JSON.stringify([userId, message]))
-      } catch(e) {
-        contexts.delete(key)
-      }
-    }, 0);
+  messages$.subscribe(({ userId, message }) => {
+    messages.set(id++, { userId, message })
+    contexts.forEach((context, key) => {
+      setTimeout(() => {
+        try {
+          context.websocket.send(JSON.stringify([userId, message]))
+        } catch(e) {
+          contexts.delete(key)
+        }
+      }, 0);
+    })
   })
-})
-
-console.log('Server running on port 3000');
+}).catch(error => console.log(error));
