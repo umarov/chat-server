@@ -2,7 +2,6 @@
 import * as Koa from 'koa';
 import * as Router from 'koa-router';
 import * as websockify from 'koa-websocket';
-import * as serve from 'koa-static';
 import { readFile, writeFile } from 'fs';
 import { promisify } from 'util';
 import * as path from 'path';
@@ -11,8 +10,9 @@ import "reflect-metadata";
 import {createConnection} from "typeorm";
 
 import {User} from "./entity/User";
+(async () => {
+  const connection = await createConnection();
 
-createConnection().then(async connection => {
   const fileName = 'chats';
   const messages = new Map();
 
@@ -22,7 +22,6 @@ createConnection().then(async connection => {
   let id = 0
   let userId = 0
 
-  app.use(serve(path.resolve(__dirname, '../ui/chat-ui/dist')))
   app.use(async (ctx, next) => {
     // Log the request to the console
     console.log('Url:', ctx.url);
@@ -32,7 +31,10 @@ createConnection().then(async connection => {
 
   const ws = new Router();
   let contexts = new Map();
-  ws.get('/chat-ws', (context) => {
+
+
+  ws.get('/chat-ws', async (context) => {
+
     const currentUserId = ++userId;
     contexts.set(currentUserId, context);
 
@@ -63,4 +65,4 @@ createConnection().then(async connection => {
       }, 0);
     })
   })
-}).catch(error => console.log(error));
+})()

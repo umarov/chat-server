@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"path": "chat-ui"
+		},
+		{
+			"path": "server"
+		}
+	],
+	"settings": {
+		"prettier.eslintIntegration": false,
+		"prettier.printWidth": 80,
+		"prettier.singleQuote": true
+	}
+}

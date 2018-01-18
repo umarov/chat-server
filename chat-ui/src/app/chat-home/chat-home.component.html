@@ -1,0 +1,18 @@
+<div class="chat-ui">
+  <ul #messagesList class="messages-list mdc-list bordered-list">
+    <li class="mdc-list-item" *ngFor="let message of messages">
+      {{ message }}
+    </li>
+  </ul>
+
+  <div class="message-input">
+    <form (submit)="formSubmit($event)" class="mdc-text-field" #mdcTextField>
+      <input type="text" id="my-text-field" class="mdc-text-field__input" #textInput autofocus="true" autocomplete="off">
+      <label class="mdc-text-field__label" for="my-text-field">Type your message</label>
+      <div class="mdc-text-field__bottom-line"></div>
+    </form>
+    <button class="mdc-button mdc-button--raised" #mdcButton (click)="sendMessage()">
+      Send
+    </button>
+  </div>
+</div>

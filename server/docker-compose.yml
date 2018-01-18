@@ -1,0 +1,23 @@
+version: '3.1'
+
+services:
+  redis:
+    image: "redis:alpine"
+  db:
+    image: postgres
+    environment:
+      POSTGRES_DB: chat-server-db
+      POSTGRES_USERNAME: chat-server-username
+      POSTGRES_PASSWORD: chat-server-password
+  chat-server:
+    image: chat-server
+    build: .
+    environment:
+      NODE_ENV: production
+    ports:
+      - 3000:3000
+    depends_on:
+      - db
+      - redis
+    command: ["./wait-for-it.sh", "db:5432", "--", "ts-node", "./server/server.ts"]
+
