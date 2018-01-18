@@ -5,7 +5,8 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build --prod",
+    "copy-dist": "rm -rf ../docs && mkdir ../docs && cp -r dist/** ../docs",
+    "build": "ng build --prod && npm run copy-dist",
     "watch": "ng build --watch",
     "test": "ng test",
     "lint": "ng lint",
