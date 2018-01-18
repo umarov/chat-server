@@ -1,0 +1,41 @@
+.chat-ui {
+  height: 100vh;
+  display: grid;
+  grid-template-rows: 1fr 0fr;
+}
+
+.message-input {
+  border: 1px solid rgba(0, 0, 0, .12);
+  display: grid;
+  grid-template-columns: 4fr 1fr;
+  grid-gap: 8px;
+  padding: 8px 8px 0px 8px;
+  align-items: center;
+}
+
+.messages-list {
+  background-color: lightgoldenrodyellow;
+  overflow-y: scroll;
+}
+
+.messages-list.mdc-list.bordered-list  {
+  padding-top: 0px;
+  padding-bottom: 0px;
+  font-size: .812rem;
+}
+
+.bordered-list {
+  /* remove the side padding. we'll be placing it around the item instead. */
+  padding-right: 0;
+  padding-left: 0;
+}
+.bordered-list .mdc-list-item {
+  /* Add the list side padding padding to the list item. */
+  padding: 0 16px;
+  /* Add a border around each element. */
+  border: 1px solid rgba(0, 0, 0, .12);
+}
+/* Ensure adjacent borders don't collide with one another. */
+.bordered-list .mdc-list-item:not(:first-child) {
+  border-top: none;
+}

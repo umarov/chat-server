@@ -1,0 +1,29 @@
+.login-root {
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  justify-items: center;
+  align-items: center;
+  grid-template-rows: 1fr 1fr 1fr 1fr 1fr;
+  background-color: purple;
+}
+
+.mdc-card.login-card {
+  grid-column-start: 2;
+  grid-column-end: 5;
+  grid-row-start: 2;
+  grid-row-end: 5;
+  justify-content: stretch;
+  display: grid;
+  padding: 8px;
+  background-color: white;
+}
+
+.mdc-card__actions {
+  margin-top: 16px;
+}
+
+html,
+body {
+  background-color: purple;
+}
