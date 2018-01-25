@@ -49,13 +49,13 @@ export function sendChatMessage(user: User, message: string) {
       messages: Buffer.from(JSON.stringify(event)),
       partition: dbPartition,
       attributes: 1 /* Use GZip compression for the payload */
-    }],
-    [{
-      topic: KAFKA_TOPIC,
-      messages: Buffer.from(JSON.stringify(event)),
-      partition: broadcastMessagePartition,
-      attributes: 1 /* Use GZip compression for the payload */
     }]
+    // [{
+    //   topic: KAFKA_TOPIC,
+    //   messages: Buffer.from(JSON.stringify(event)),
+    //   partition: broadcastMessagePartition,
+    //   attributes: 1 /* Use GZip compression for the payload */
+    // }]
   ];
 
   return new Promise((resolve, reject) => {

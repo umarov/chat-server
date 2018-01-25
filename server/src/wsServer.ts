@@ -7,7 +7,7 @@ import {
   broadcastMessagePartition
 } from "./consumers/base.consumer";
 
-import { ReplaySubject } from "rxjs/ReplaySubject";
+import { Subject } from "rxjs/Subject";
 import { Client } from "kafka-node";
 
 export async function setupWsEndpoint(
@@ -15,7 +15,7 @@ export async function setupWsEndpoint(
   connection: Connection,
   sendChatMessage: (user: User, message: string) => Promise<{}>
 ) {
-  const messageSubject$ = new ReplaySubject<any>();
+  const messageSubject$ = new Subject<any>();
   await setupMessageConsumer(client, connection, messageSubject$);
   const ws = new Router();
 
@@ -69,7 +69,7 @@ export async function setupWsEndpoint(
 async function setupMessageConsumer(
   client: Client,
   connection: Connection,
-  messageSubject$: ReplaySubject<any>
+  messageSubject$: Subject<any>
 ) {
   await createConsumer(
     client,
