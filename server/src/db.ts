@@ -11,13 +11,6 @@ const {
 } = process.env;
 
 export function setupDb() {
-  console.log({
-    POSTGRES_DB,
-    POSTGRES_USERNAME,
-    POSTGRES_PASSWORD,
-    NODE_ENV,
-    POSTGRES_HOST
-  });
   return createConnection(<ConnectionOptions>{
     database: POSTGRES_DB,
     username: POSTGRES_USERNAME,

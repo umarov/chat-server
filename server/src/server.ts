@@ -11,7 +11,10 @@ import { Server } from "uws";
 import { setupDb } from "./db";
 import { setupDbConsumer } from "./consumers/messageDb.consumer";
 import { setupWsEndpoint } from "./wsServer";
+import { sendChatMessage } from "./producers/chatMessage.producer";
+
 import { User } from "./entity/User";
+import { createClient } from "./consumers/base.consumer";
 
 (async () => {
   let connection = await setupDb();
@@ -20,6 +23,10 @@ import { User } from "./entity/User";
     await connection.close();
     connection = await setupDb();
   }
+
+  const client = createClient()
+  const ws = await setupWsEndpoint(client, connection, sendChatMessage);
+  await setupDbConsumer(client);
 
   const koaApp = new Koa();
 
@@ -52,12 +59,9 @@ import { User } from "./entity/User";
     controllers: [__dirname + "/controllers/*.ts"]
   });
 
-  const ws = await setupWsEndpoint(connection);
   const app = websockify(koaApp);
 
   app.ws.use(ws.routes());
-
-  setupDbConsumer();
 
   app.listen(3000, () => {
     console.log("Server running on port 3000");

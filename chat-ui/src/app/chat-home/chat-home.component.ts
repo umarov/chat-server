@@ -21,6 +21,7 @@ import { debounceTime } from 'rxjs/operators/debounceTime'
 import { Subscription } from 'rxjs/Subscription'
 import { AuthService } from '../auth.service'
 import { Router } from '@angular/router'
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-chat-home',
@@ -108,7 +109,7 @@ export class ChatHomeComponent implements OnInit, OnDestroy, AfterViewInit {
   private connectToServer() {
     if (this.authService.getToken()) {
       this.socket = new WebSocket(
-        `ws://mumarov.localhost.run/chat?token=${this.authService.getToken()}`
+        `ws://${environment.backendUrl}/chat?token=${this.authService.getToken()}`
       )
       this.socket.addEventListener('message', wsMessage => {
         const data = JSON.parse(wsMessage.data)
@@ -123,7 +124,10 @@ export class ChatHomeComponent implements OnInit, OnDestroy, AfterViewInit {
         console.log(
           'You are not authorized to access chat or the chat server is dead'
         )
-        this.router.navigateByUrl('/login')
+        setTimeout(() => {
+          this.connectToServer()
+        }, 5000);
+        // this.router.navigateByUrl('/login')
       })
     } else {
       this.router.navigateByUrl('/login')

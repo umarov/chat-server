@@ -42,8 +42,6 @@ export function sendChatMessage(user: User, message: string) {
     message
   };
 
-  // const buffer = Buffer.from(JSON.stringify(event));
-
   // Create a new payload
   const records = [
     [{
@@ -61,23 +59,25 @@ export function sendChatMessage(user: User, message: string) {
   ];
 
   return new Promise((resolve, reject) => {
-    client.refreshMetadata([KAFKA_TOPIC], (err) => {
-      if (err) {
-        console.log(err)
-      } else {
-        records.forEach(record => {
-          setTimeout(() => {
-            producer.send(record, (error, data) => {
-              if (error) {
-                reject(error);
-              } else {
-                resolve(data);
-              }
-            });
-          }, 0);
-        })
-      }
+    records.forEach(record => {
+      // client.refreshMetadata([KAFKA_TOPIC], (err) => {
+      //   if (err) {
+      //     console.log(err)
+      //   } else {
+      //   }
+      // })
+      producer.send(record, (error, data) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(data);
+        }
+      });
     })
   });
   //Send record to Kafka and log result/error
+}
+
+function sendMessage(record) {
+
 }

@@ -1,12 +1,8 @@
 import { Client, Consumer } from "kafka-node";
-
 const { KAFKA_HOST, KAFKA_PORT, KAFKA_TOPIC } = process.env;
 
-const client = new Client(`${KAFKA_HOST}:${KAFKA_PORT}`);
-
-const topic = {
-  topic: KAFKA_TOPIC
-};
+export const dbPartition = 1;
+export const broadcastMessagePartition = 0;
 
 const options = {
   autoCommit: true,
@@ -15,16 +11,22 @@ const options = {
   encoding: "buffer"
 };
 
-export const dbPartition = 0;
-export const broadcastMessagePartition = 1;
+const topic = {
+  topic: KAFKA_TOPIC
+};
 
-export function createConsumer(partition, callback, errorCallback) {
+export function createClient() {
+
+  return new Client(`${KAFKA_HOST}:${KAFKA_PORT}`);
+}
+
+export function createConsumer(client, partition, callback, errorCallback) {
   return new Promise((resolve, reject) => {
     try {
       const consumer = new Consumer(
         client,
         [Object.assign({}, topic, { partition })],
-        options
+        Object.assign({}, options, { groupId: `chatmessagespartition${partition}` })
       );
 
       consumer.on("message", callback);
@@ -36,7 +38,7 @@ export function createConsumer(partition, callback, errorCallback) {
         });
       });
 
-      console.log("createConsumer is setup with partition", partition)
+      console.log("createConsumer is setup with partition", partition, "Group id of ", `chatmessagespartition${partition}`);
       resolve("createConsumer is setup");
     } catch (err) {
       console.log(err);

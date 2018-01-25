@@ -13,7 +13,6 @@ import { User } from "../entity/User";
 
 @JsonController()
 export class UserController {
-  @Authorized()
   @Get("/users")
   index() {
     return getRepository(User).find({
@@ -50,6 +49,6 @@ export class UserController {
   @Authorized()
   @Delete("/users/:id")
   remove(@Param("id") id: number) {
-    return "Removing user...";
+    return getRepository(User).removeById(id)
   }
 }

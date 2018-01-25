@@ -1,6 +1,5 @@
 import * as Router from "koa-router";
 import { Connection } from "typeorm/connection/Connection";
-import { sendChatMessage } from "./producers/chatMessage.producer";
 import { Message } from "./entity/Message";
 import { User } from "./entity/User";
 import {
@@ -9,11 +8,16 @@ import {
 } from "./consumers/base.consumer";
 
 import { ReplaySubject } from "rxjs/ReplaySubject";
+import { Client } from "kafka-node";
 
-export async function setupWsEndpoint(connection: Connection) {
+export async function setupWsEndpoint(
+  client: Client,
+  connection: Connection,
+  sendChatMessage: (user: User, message: string) => Promise<{}>
+) {
+  const messageSubject$ = new ReplaySubject<any>();
+  await setupMessageConsumer(client, connection, messageSubject$);
   const ws = new Router();
-  const messageSubject$ = new ReplaySubject<Message>();
-  await setupMessageConsumer(connection, messageSubject$);
 
   ws.all("/chat", async context => {
     const token = context.query.token;
@@ -22,27 +26,38 @@ export async function setupWsEndpoint(connection: Connection) {
 
     if (user) {
       const messages = await connection.getRepository(Message).find({
-        take: 100,
         order: {
           createdAt: "ASC"
-        }
+        },
+        take: 200
       });
-      await sendChatMessage(user, ` joined!`);
+
       messages.forEach(message => {
-        context.websocket.send(JSON.stringify(message));
+        setTimeout(() => {
+          context.websocket.send(
+            JSON.stringify({
+              content: message.content,
+              user: {
+                id: message.user.id,
+                firstName: message.user.firstName,
+                lastName: message.user.lastName
+              }
+            })
+          );
+        }, 0);
       });
 
       const subscription = messageSubject$.subscribe(message => {
         context.websocket.send(JSON.stringify(message));
-      })
+      });
 
       context.websocket.on("message", async (message: any) => {
         await sendChatMessage(user, message);
       });
 
       context.websocket.on("close", () => {
-        subscription.unsubscribe()
-      })
+        subscription.unsubscribe();
+      });
     } else {
       context.websocket.close();
     }
@@ -52,10 +67,12 @@ export async function setupWsEndpoint(connection: Connection) {
 }
 
 async function setupMessageConsumer(
+  client: Client,
   connection: Connection,
-  messageSubject$: ReplaySubject<Message>
+  messageSubject$: ReplaySubject<any>
 ) {
   await createConsumer(
+    client,
     broadcastMessagePartition,
     async message => {
       var buf = new Buffer(message.value, "binary");
@@ -69,7 +86,15 @@ async function setupMessageConsumer(
         const message = new Message();
         message.user = user;
         message.content = decodedMessage.message;
-        messageSubject$.next(message)
+        console.log('Sending message:', message.content);
+        messageSubject$.next({
+          content: decodedMessage.message,
+          user: {
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName
+          }
+        });
       }
     },
     err => {

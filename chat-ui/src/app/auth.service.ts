@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http'
 import { Router } from '@angular/router'
 import { tap } from 'rxjs/operators/tap'
 import { User } from './user'
+import { environment } from '../environments/environment'
 
 @Injectable()
 export class AuthService {
@@ -37,7 +38,7 @@ export class AuthService {
   login({ userName, password }: User) {
     return this.http
       .post<User>(
-        'http://mumarov.localhost.run/api/auth',
+        `http://${environment.backendUrl}/api/auth`,
         { userName, password }
       )
       .pipe(
@@ -49,7 +50,7 @@ export class AuthService {
   }
 
   signup({ userName, password, firstName, lastName }: User) {
-    return this.http.post<User>('http://mumarov.localhost.run/api/users', {
+    return this.http.post<User>(`http://${environment.backendUrl}/api/users`, {
       firstName,
       lastName,
       userName,
