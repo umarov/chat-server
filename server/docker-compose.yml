@@ -31,7 +31,7 @@ services:
       KAFKA_HOST: "${KAFKA_HOST}"
       KAFKA_PORT: "${KAFKA_PORT}"
     ports:
-      - 3000:3000
+      - 3001:3001
     depends_on:
       - db
       - kafka
