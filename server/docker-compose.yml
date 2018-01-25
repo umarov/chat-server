@@ -1,23 +1,39 @@
 version: '3.1'
 
 services:
-  redis:
-    image: "redis:alpine"
+  kafka:
+    image: johnnypark/kafka-zookeeper
+    ports:
+      - 2181:2181
+      - 9290:9290
+    environment:
+      TOPICS: "chat.messages:2:1"
   db:
     image: postgres
+    env_file:
+      - ./.prodenv
     environment:
-      POSTGRES_DB: chat-server-db
-      POSTGRES_USERNAME: chat-server-username
-      POSTGRES_PASSWORD: chat-server-password
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
   chat-server:
     image: chat-server
     build: .
+    env_file:
+      - ./.prodenv
     environment:
       NODE_ENV: production
+      POSTGRES_HOST: db
+      POSTGRES_DB: chatserverdb
+      POSTGRES_USERNAME: postgres
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      KAFKA_TOPIC: chat.messages
+      KAFKA_CLIENT_ID: "${KAFKA_CLIENT_ID}"
+      KAFKA_HOST: "${KAFKA_HOST}"
+      KAFKA_PORT: "${KAFKA_PORT}"
     ports:
       - 3000:3000
     depends_on:
       - db
-      - redis
-    command: ["./wait-for-it.sh", "db:5432", "--", "ts-node", "./server/server.ts"]
+      - kafka
+    command: ["./wait-for-it.sh", "db:5432", "--", "./wait-for-it.sh", "kafka:2181", "--", "ts-node", "./src/server.ts"]
 

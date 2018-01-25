@@ -1,6 +1,6 @@
 <div class="chat-ui">
   <ul #messagesList class="messages-list mdc-list bordered-list">
-    <li class="mdc-list-item" *ngFor="let message of messages">
+    <li class="mdc-list-item" *ngFor="let message of messages;trackBy:trackByIndex">
       {{ message }}
     </li>
   </ul>

@@ -4,5 +4,7 @@ node_modules/
 build/
 tmp/
 temp/
-
 codeshoptimer-firebase-adminsdk-oi76q-0086916d81.json
+kafka*
+.env
+.prodenv

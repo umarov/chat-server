@@ -1,30 +1,55 @@
-import {Controller, Param, Body, Get, Post, Put, Delete} from "routing-controllers";
-import { getRepository } from 'typeorm';
-import { User} from '../entity/User';
+import {
+  JsonController,
+  Param,
+  Body,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Authorized
+} from "routing-controllers";
+import { getRepository } from "typeorm";
+import { User } from "../entity/User";
 
-@Controller()
+@JsonController()
 export class UserController {
-    @Get("/users/:id")
-    getOne(@Param("id") id: number) {
-        return "This action returns user #" + id;
-    }
+  @Authorized()
+  @Get("/users")
+  index() {
+    return getRepository(User).find({
+      select: ["firstName", "lastName", "userName"]
+    });
+  }
 
-    @Post("/users")
-    post(@Body() user: any) {
-        return getRepository(User).save(new User(user));
-    }
+  @Authorized()
+  @Get("/users/:id")
+  getOne(@Param("id") id: number) {
+    return getRepository(User).findOneById(id, {
+      select: ["firstName", "lastName", "userName", "messages"],
+      relations: ["messages"]
+    });
+  }
 
-    @Put("/users/:id")
-    async put(@Param("id") id: number, @Body() userData: any) {
-        const userRepo = getRepository(User);
-        const user = await userRepo.findOneById(id);
-        Object.assign(user, userData);
+  @Post("/users")
+  post(@Body() user: User) {
+    const { firstName, lastName, userName, password } = user;
+    return getRepository(User).save(new User(firstName, lastName, userName, password));
+  }
 
-        return userRepo.save(user);
-    }
+  @Authorized()
+  @Put("/users/:id")
+  async put(@Param("id") id: number, @Body() userData: any) {
+    const userRepo = getRepository(User);
+    const { firstName, lastName, userName, password } = userData
+    const user = await userRepo.findOneById(id);
+    Object.assign(user, { firstName, lastName, userName, password });
 
-    @Delete("/users/:id")
-    remove(@Param("id") id: number) {
-        return "Removing user...";
-    }
+    return userRepo.save(user);
+  }
+
+  @Authorized()
+  @Delete("/users/:id")
+  remove(@Param("id") id: number) {
+    return "Removing user...";
+  }
 }

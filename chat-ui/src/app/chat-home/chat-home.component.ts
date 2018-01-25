@@ -19,6 +19,8 @@ import { pairwise } from 'rxjs/operators/pairwise'
 import { map } from 'rxjs/operators/map'
 import { debounceTime } from 'rxjs/operators/debounceTime'
 import { Subscription } from 'rxjs/Subscription'
+import { AuthService } from '../auth.service'
+import { Router } from '@angular/router'
 
 @Component({
   selector: 'app-chat-home',
@@ -26,11 +28,11 @@ import { Subscription } from 'rxjs/Subscription'
   styleUrls: ['./chat-home.component.scss']
 })
 export class ChatHomeComponent implements OnInit, OnDestroy, AfterViewInit {
-  messages = []
+  messages: any[] = []
   private socket: WebSocket
   messageListElement: HTMLUListElement
   textInput: HTMLInputElement
-  messagesScroll$
+  messagesScroll$: Observable<any>
   scrollSub: Subscription
   forceScrollOnMessage = true
 
@@ -38,6 +40,8 @@ export class ChatHomeComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChildren('textInput') textInputs: QueryList<ElementRef>
   @ViewChildren('mdcTextField') textFieldBoxEls: QueryList<ElementRef>
   @ViewChildren('mdcButton') mdcButtons: QueryList<ElementRef>
+
+  constructor(private authService: AuthService, private router: Router) {}
 
   ngOnInit() {
     this.connectToServer()
@@ -47,25 +51,25 @@ export class ChatHomeComponent implements OnInit, OnDestroy, AfterViewInit {
     this.messageListElement = this.messageLists.first.nativeElement
     this.textInput = this.textInputs.first.nativeElement
     this.messagesScroll$ = fromEvent(this.messageListElement, 'scroll')
-    this.registerScrollListener()
+    // this.registerScrollListener()
 
     const textFieldBoxEl = this.textFieldBoxEls.first.nativeElement
 
-    const textField = new MDCTextField(
+    new MDCTextField(
       textFieldBoxEl,
       /* foundation */ undefined,
-      el => new MDCRipple(el)
+      (el: HTMLElement) => new MDCRipple(el)
     )
 
-    const button = new MDCRipple(this.mdcButtons.first.nativeElement)
+    new MDCRipple(this.mdcButtons.first.nativeElement)
   }
 
   ngOnDestroy() {
     this.socket.close()
-    this.scrollSub.unsubscribe()
+    // this.scrollSub.unsubscribe()
   }
 
-  formSubmit(event) {
+  formSubmit(event: Event) {
     event.preventDefault()
     this.sendMessage()
   }
@@ -75,8 +79,12 @@ export class ChatHomeComponent implements OnInit, OnDestroy, AfterViewInit {
 
     if (value) {
       this.socket.send(this.textInput.value)
-      this.textInput.value = null
+      this.textInput.value = ''
     }
+  }
+
+  trackByIndex(index: number, _: any) {
+    return index
   }
 
   private registerScrollListener() {
@@ -90,7 +98,7 @@ export class ChatHomeComponent implements OnInit, OnDestroy, AfterViewInit {
         pairwise(),
         debounceTime(500)
       )
-      .subscribe(positions => {
+      .subscribe((positions: { sT: number; sH: number; cH: number }[]) => {
         const [first, second] = positions
         console.log(first.sT < second.sT)
         this.forceScrollOnMessage = first.sT < second.sT
@@ -98,14 +106,27 @@ export class ChatHomeComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private connectToServer() {
-    this.socket = new WebSocket(`ws://mumarov.localhost.run/chat-ws`)
-    this.socket.addEventListener('message', wsMessage => {
-      setTimeout(() => {
+    if (this.authService.getToken()) {
+      this.socket = new WebSocket(
+        `ws://mumarov.localhost.run/chat?token=${this.authService.getToken()}`
+      )
+      this.socket.addEventListener('message', wsMessage => {
         const data = JSON.parse(wsMessage.data)
-        const [id, message] = data
-        this.messages.push(`User ${id}: ${message}`)
-        this.messageListElement.scrollTop = this.messageListElement.scrollHeight
-      }, 0)
-    })
+        const { firstName, lastName } = data.user
+        this.messages.push(`${firstName} ${lastName}: ${data.content}`)
+        setTimeout(() => {
+          this.messageListElement.scrollTop = this.messageListElement.scrollHeight
+        }, 10)
+      })
+
+      this.socket.addEventListener('close', event => {
+        console.log(
+          'You are not authorized to access chat or the chat server is dead'
+        )
+        this.router.navigateByUrl('/login')
+      })
+    } else {
+      this.router.navigateByUrl('/login')
+    }
   }
 }

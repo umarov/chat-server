@@ -1,68 +1,65 @@
-
-import * as Koa from 'koa';
-import * as Router from 'koa-router';
-import * as websockify from 'koa-websocket';
-import { readFile, writeFile } from 'fs';
-import { promisify } from 'util';
-import * as path from 'path';
-import { Subject } from 'rxjs';
+import * as Koa from "koa";
+import * as websockify from "koa-websocket";
+import * as cors from "@koa/cors";
+import { readFile, writeFile } from "fs";
+import { promisify } from "util";
+import * as path from "path";
+import { useKoaServer, Action } from "routing-controllers";
 import "reflect-metadata";
-import {createConnection} from "typeorm";
+import { Server } from "uws";
 
-import {User} from "./entity/User";
+import { setupDb } from "./db";
+import { setupDbConsumer } from "./consumers/messageDb.consumer";
+import { setupWsEndpoint } from "./wsServer";
+import { User } from "./entity/User";
+
 (async () => {
-  const connection = await createConnection();
-
-  const fileName = 'chats';
-  const messages = new Map();
+  let connection = await setupDb();
+  if (process.env.CLEAN_UP) {
+    await connection.dropDatabase();
+    await connection.close();
+    connection = await setupDb();
+  }
 
   const koaApp = new Koa();
-  const app = websockify(koaApp);
-  const messages$ = new Subject();
-  let id = 0
-  let userId = 0
 
-  app.use(async (ctx, next) => {
-    // Log the request to the console
-    console.log('Url:', ctx.url);
-    // Pass the request to the next middleware function
+  koaApp.use(
+    cors({
+      origin: "*"
+    })
+  );
+
+  koaApp.use(async (ctx, next) => {
+    console.log("Url:", ctx.url);
     await next();
   });
 
-  const ws = new Router();
-  let contexts = new Map();
-
-
-  ws.get('/chat-ws', async (context) => {
-
-    const currentUserId = ++userId;
-    contexts.set(currentUserId, context);
-
-    messages.forEach(({ userId, message }) => {
-      context.websocket.send(JSON.stringify([userId, message]))
-    });
-
-    context.websocket.on('message', (message: any) => {
-      messages$.next({ userId: currentUserId, message })
-    })
-  })
-
-  app.ws.use(ws.routes())
-
-  app.listen(3000, () => {
-    console.log('Server running on port 3000');
+  useKoaServer(koaApp, {
+    routePrefix: "api",
+    authorizationChecker: async (action: Action) => {
+      const token = action.request.headers["authorization"];
+      try {
+        const user = await User.findByToken(token);
+        return !!user;
+      } catch {
+        return false;
+      }
+    },
+    currentUserChecker: async (action: Action) => {
+      const token = action.request.headers["authorization"];
+      return User.findByToken(token);
+    },
+    controllers: [__dirname + "/controllers/*.ts"]
   });
 
-  messages$.subscribe(({ userId, message }) => {
-    messages.set(id++, { userId, message })
-    contexts.forEach((context, key) => {
-      setTimeout(() => {
-        try {
-          context.websocket.send(JSON.stringify([userId, message]))
-        } catch(e) {
-          contexts.delete(key)
-        }
-      }, 0);
-    })
-  })
-})()
+  const ws = await setupWsEndpoint(connection);
+  const app = websockify(koaApp);
+
+  app.ws.use(ws.routes());
+
+  setupDbConsumer();
+
+  app.listen(3000, () => {
+    console.log("Server running on port 3000");
+  });
+})();

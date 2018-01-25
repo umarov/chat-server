@@ -1,14 +1,17 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne } from "typeorm";
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  ManyToOne
+} from "typeorm";
 import { User } from "./User";
-
 
 @Entity()
 export class Message {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn() id: number;
 
-  @Column('character varying')
-  content: string;
+  @Column("character varying") content: string;
 
   @Column()
   @CreateDateColumn()

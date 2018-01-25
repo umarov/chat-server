@@ -1,6 +1,9 @@
-import { Component, ViewChildren, QueryList } from '@angular/core';
-import { OnInit, OnDestroy, AfterViewInit } from '@angular/core/src/metadata/lifecycle_hooks';
-
+import { Component, ViewChildren, QueryList } from '@angular/core'
+import {
+  OnInit,
+  OnDestroy,
+  AfterViewInit
+} from '@angular/core/src/metadata/lifecycle_hooks'
 
 @Component({
   selector: 'app-root',
@@ -9,7 +12,4 @@ import { OnInit, OnDestroy, AfterViewInit } from '@angular/core/src/metadata/lif
   `,
   styles: []
 })
-export class AppComponent {
-
-}
-
+export class AppComponent {}
