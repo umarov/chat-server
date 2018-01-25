@@ -28,6 +28,12 @@ const client = new Client(`${KAFKA_HOST}:${KAFKA_PORT}`, KAFKA_CLIENT_ID, {
 const producer = new HighLevelProducer(client);
 producer.on("ready", function() {
   console.log("Kafka Producer is connected and ready.");
+
+  client.refreshMetadata([KAFKA_TOPIC], (err) => {
+    if (err) {
+      console.log(err)
+    }
+  });
 });
 
 producer.on("error", function(error) {
@@ -47,7 +53,7 @@ export function sendChatMessage(user: User, message: string) {
     [{
       topic: KAFKA_TOPIC,
       messages: Buffer.from(JSON.stringify(event)),
-      partition: dbPartition,
+      partition: 0,
       attributes: 1 /* Use GZip compression for the payload */
     }]
     // [{
@@ -60,12 +66,6 @@ export function sendChatMessage(user: User, message: string) {
 
   return new Promise((resolve, reject) => {
     records.forEach(record => {
-      // client.refreshMetadata([KAFKA_TOPIC], (err) => {
-      //   if (err) {
-      //     console.log(err)
-      //   } else {
-      //   }
-      // })
       producer.send(record, (error, data) => {
         if (error) {
           reject(error);

@@ -5,8 +5,9 @@ services:
     image: johnnypark/kafka-zookeeper
     ports:
       - 2181:2181
-      - 9290:9290
+      - 9092:9092
     environment:
+      ADVERTISED_PORT: 9092
       TOPICS: "chat.messages:2:1"
   db:
     image: postgres
@@ -28,7 +29,7 @@ services:
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
       KAFKA_TOPIC: chat.messages
       KAFKA_CLIENT_ID: "${KAFKA_CLIENT_ID}"
-      KAFKA_HOST: "${KAFKA_HOST}"
+      KAFKA_HOST: kafka
       KAFKA_PORT: "${KAFKA_PORT}"
     ports:
       - 3001:3001
