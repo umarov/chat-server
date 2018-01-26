@@ -6,7 +6,10 @@ services:
     ports:
       - 2181:2181
       - 9092:9092
+    networks:
+      - internal
     environment:
+      KAFKA_HEAP_OPTS: "-Xmx512M -Xms512M"
       ADVERTISED_PORT: 9092
       TOPICS: "chat.messages:2:1"
   db:
@@ -16,6 +19,10 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+    networks:
+      - internal
+    labels:
+      - traefik.enable=false
   chat-server:
     image: chat-server
     build: .
@@ -33,8 +40,21 @@ services:
       KAFKA_PORT: "${KAFKA_PORT}"
     ports:
       - 3001:3001
+    labels:
+      - traefik.backend=chat-server
+      - traefik.frontend.rule=Host:nodechat.club
+      - traefik.docker.network=proxy
+      - traefik.port=80
+    networks:
+      - internal
+      - proxy
     depends_on:
       - db
       - kafka
     command: ["./wait-for-it.sh", "db:5432", "--", "./wait-for-it.sh", "kafka:2181", "--", "ts-node", "./src/server.ts"]
 
+networks:
+  proxy:
+    external: true
+  internal:
+    external: false

@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  backendUrl: 'mumarov.localhost.run'
+  backendUrl: 'nodechat.club'
 };
