@@ -25,15 +25,17 @@ import { createClient } from "./consumers/base.consumer";
       connection = await setupDb();
     }
 
-    const client = createClient()
+    const client = createClient();
     const ws = await setupWsEndpoint(client, connection, sendChatMessage);
     await setupDbConsumer(client);
 
     const koaApp = new Koa();
+    const origin =
+      process.env.NODE_ENV === "production" ? process.env.CORS_ORIGIN : "*";
 
     koaApp.use(
       cors({
-        origin: "*"
+        origin
       })
     );
 
@@ -44,6 +46,9 @@ import { createClient } from "./consumers/base.consumer";
 
     useKoaServer(koaApp, {
       routePrefix: "api",
+      cors: {
+        origin
+      },
       authorizationChecker: async (action: Action) => {
         const token = action.request.headers["authorization"];
         try {
@@ -65,11 +70,11 @@ import { createClient } from "./consumers/base.consumer";
     app.ws.use(ws.routes());
 
     app.listen(3001, () => {
-      console.log(process.env)
+      console.log(process.env);
       console.log("Server running on port 3001");
     });
   } catch (err) {
-    console.log(process.env)
-    console.log(err)
+    console.log(process.env);
+    console.log(err);
   }
 })();

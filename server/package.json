@@ -23,6 +23,7 @@
       "dotenv": "^4.0.0",
       "jsonwebtoken": "^8.1.1",
       "kafka-node": "^2.3.2",
+      "kcors": "^2.2.1",
       "koa": "^2.4.1",
       "koa-bodyparser": "^4.2.0",
       "koa-multer": "^1.0.2",

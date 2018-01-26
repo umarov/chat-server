@@ -30,6 +30,7 @@ services:
       - ./.prodenv
     environment:
       NODE_ENV: production
+      CORS_ORIGIN: "${CORS_ORIGIN}"
       POSTGRES_HOST: db
       POSTGRES_DB: chatserverdb
       POSTGRES_USERNAME: postgres
@@ -44,7 +45,7 @@ services:
       - traefik.backend=chat-server
       - traefik.frontend.rule=Host:nodechat.club
       - traefik.docker.network=proxy
-      - traefik.port=80
+      - traefik.port=3001
     networks:
       - internal
       - proxy
