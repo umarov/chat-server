@@ -36,6 +36,9 @@ export class ChatHomeComponent implements OnInit, OnDestroy, AfterViewInit {
   messagesScroll$: Observable<any>
   scrollSub: Subscription
   forceScrollOnMessage = true
+  get webSocketBaseUrl() {
+    return `${environment.production ? 'wss' : 'ws'}://${environment.backendUrl}`
+  }
 
   @ViewChildren('messagesList') messageLists: QueryList<ElementRef>
   @ViewChildren('textInput') textInputs: QueryList<ElementRef>
@@ -109,7 +112,7 @@ export class ChatHomeComponent implements OnInit, OnDestroy, AfterViewInit {
   private connectToServer() {
     if (this.authService.getToken()) {
       this.socket = new WebSocket(
-        `ws://${environment.backendUrl}/chat?token=${this.authService.getToken()}`
+        `${this.webSocketBaseUrl}/chat?token=${this.authService.getToken()}`
       )
       this.socket.addEventListener('message', wsMessage => {
         const data = JSON.parse(wsMessage.data)

@@ -9,6 +9,9 @@ import { environment } from '../environments/environment'
 export class AuthService {
   USER_NAME_KEY = 'ws-chat-server-user-name'
   TOKEN_KEY = 'ws-chat-server-token'
+  get baseUrl() {
+    return `${environment.production ? 'https' : 'http'}://${environment.backendUrl}`
+  }
 
   constructor(private http: HttpClient, private router: Router) {}
 
@@ -38,7 +41,7 @@ export class AuthService {
   login({ userName, password }: User) {
     return this.http
       .post<User>(
-        `http://${environment.backendUrl}/api/auth`,
+        `${this.baseUrl}/api/auth`,
         { userName, password }
       )
       .pipe(
@@ -50,7 +53,7 @@ export class AuthService {
   }
 
   signup({ userName, password, firstName, lastName }: User) {
-    return this.http.post<User>(`http://${environment.backendUrl}/api/users`, {
+    return this.http.post<User>(`${this.baseUrl}/api/users`, {
       firstName,
       lastName,
       userName,
